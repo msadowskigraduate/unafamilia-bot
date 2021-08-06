@@ -60,8 +60,8 @@ async def on_raw_reaction_add(payload):
         order = msg.embeds[0]
         await msg.edit(embed=order.set_field_at(0, name="Weapon Enhancement", value="Greater Weight Stone", inline=False))
 
-    if str(payload.emoji) == '✅' and payload.channel_id != channel_id:
-        channel = client.get_channel(channel_id)
+    if str(payload.emoji) == '✅' and payload.channel_id != CHANNEL_ID:
+        channel = client.get_channel(CHANNEL_ID)
         user = await client.fetch_user(payload.user_id)
         preorder_embed = storage[payload.user_id].embeds[0]
         preorder_embed.title = "Confirmed RaidPackage Order"
