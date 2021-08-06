@@ -1,10 +1,13 @@
+import os
 import discord
 from discord import user
 from discord import embeds
+from dotenv import load_dotenv
 
 client = discord.Client()
-channel_id = 872909016806866964
-
+load_dotenv()
+CHANNEL_ID = os.getenv('CHANNEL_ID')
+TOKEN = os.getenv('TOKEN')
 
 storage = {}
 
@@ -69,4 +72,4 @@ async def on_raw_reaction_add(payload):
         await user.send(f"Your order is confirmed: {order_posting.jump_url}")
         del storage[payload.user_id]
 
-client.run('ODcyNTk5MzcwNzkxNTE4MjM4.YQsNfg.mkxeHsgWyS3ve5KcgixxRwxbos0')
+client.run(TOKEN)
