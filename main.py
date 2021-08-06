@@ -31,9 +31,6 @@ async def on_message(message):
         await sent_message.add_reaction('✅')
         await message.delete()
 
-     
-
-
 @client.event
 async def on_raw_reaction_add(payload):
     if payload.user_id == client.user.id:
@@ -84,7 +81,7 @@ async def on_raw_reaction_add(payload):
         await user.send(f"Your order is confirmed: {order_posting.jump_url}")
         del storage[payload.user_id]
 
-
+        
 async def sendErrorToUser(user, message):
         await user.send(message)
 
