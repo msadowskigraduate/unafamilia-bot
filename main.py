@@ -1,8 +1,10 @@
 import os
 import discord
+import asyncio
 from discord import user
 from discord import embeds
 from dotenv import load_dotenv
+
 
 client = discord.Client()
 load_dotenv()
@@ -10,6 +12,7 @@ CHANNEL_ID = os.getenv('CHANNEL_ID')
 TOKEN = os.getenv('TOKEN')
 
 storage = {}
+
 
 @client.event
 async def on_message(message):
@@ -29,6 +32,7 @@ async def on_message(message):
         await sent_message.add_reaction('<:PotSpectralInt:873187413424484402>')
         await sent_message.add_reaction('<:PotSpectralStr:873183439656996895>')
         await sent_message.add_reaction('✅')
+        await sent_message.add_reaction('❌')
         await message.delete()
 
 @client.event
@@ -41,19 +45,20 @@ async def on_raw_reaction_add(payload):
 
     usr = await client.fetch_user(payload.user_id)
     
+    if str(payload.emoji) == '❌':
+            await cancelOrder(storage[payload.user_id], payload.user_id)
 
     if str(payload.emoji) == '<:PotSpectralStr:873183439656996895>':
         msg = storage[payload.user_id]
         order = msg.embeds[0]
         item = "Potion of Greater Strength"
                
-        qtyReq = await ProcessUserQtyInput(client, usr, item, 40) 
+        qtyReq = await ProcessUserQtyInput(client, usr, item, 40, payload.user_id) 
         if qtyReq == None:
             return
         else:
             await msg.edit(embed=order.set_field_at(1, name="Potion", value=item + f" x{qtyReq}", inline=False))
             
-
     if str(payload.emoji) == '<:PotSpectralInt:873187413424484402>':
         msg = storage[payload.user_id]
         order = msg.embeds[0]
@@ -81,12 +86,17 @@ async def on_raw_reaction_add(payload):
         await user.send(f"Your order is confirmed: {order_posting.jump_url}")
         del storage[payload.user_id]
 
-        
-async def sendErrorToUser(user, message):
-        await user.send(message)
 
-async def ProcessUserQtyInput(client, usr, item, qtyMax):
-    qtyEmbed = discord.Embed(title=item, url='', color=0x109319, description=f"Enter quantity required (Max {qtyMax})")
+async def cancelOrder(msg, usr_id):
+    await msg.delete()
+    del storage[usr_id]
+    cancelMsg = discord.Embed(title="Order Cancelled", url='', color=0x109319)
+    usr = await client.fetch_user(usr_id)
+    await usr.send(embed=cancelMsg)
+
+
+async def ProcessUserQtyInput(client, usr, item, qtyMax, usr_id):
+    qtyEmbed = discord.Embed(title=item, url='', color=0x109319, description=f"Enter quantity required, for example 20 (Max {qtyMax})")
     botMsg = await usr.send(embed=qtyEmbed)
 
     def checkMsg(msg):
@@ -94,30 +104,19 @@ async def ProcessUserQtyInput(client, usr, item, qtyMax):
             qty = int(msg.content)
             return True
         except Exception:
-            sendErrorToUser(msg.author, "Test Message")
             raise Exception("mismatch type in ProcessUserQtyInput")
 
-    msg = await client.wait_for("message", check=checkMsg)
-    await botMsg.delete()
-    return int(msg.content)
+    try:
+        msg = await client.wait_for("message", timeout=5.0, check=checkMsg)
+    except asyncio.TimeoutError:
+        await botMsg.delete()
+        await cancelOrder(storage[usr_id], usr_id)
+    else:
+        await botMsg.delete()
+        return int(msg.content)
+        
 
-    
 
-    # while True:
-    #     if msg.content == "cancel":
-    #         return
-    #     try:
-    #         qtyReq = int(msg.content)
-    #     except ValueError:
-    #         errorMsg = await usr.send(embed=discord.Embed(title="Invalid input", url='', color=0x109319, description='Please enter a number'))
-    #         msg=await client.wait_for("message")
-    #         await errorMsg.delete()
-    #         failureMsg = await usr.send(embed=discord.Embed(title="Order failed", url='', color=0x109319, description='Please click the emoji and try again'))
-    #         # removeEmoji()
-    #         break
-    #     else:
-    #         break
-    # return qtyReq
 
     
     
