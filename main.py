@@ -44,14 +44,14 @@ async def on_raw_reaction_add(payload):
         return
 
     usr = await client.fetch_user(payload.user_id)
-    
+    msg = storage[payload.user_id]
+
     if str(payload.emoji) == '❌':
             await cancelOrder(storage[payload.user_id], payload.user_id)
 
     if str(payload.emoji) == '<:PotSpectralStr:873183439656996895>':
-        msg = storage[payload.user_id]
         order = msg.embeds[0]
-        item = "Potion of Greater Strength"
+        item = "Potion of Spectral Strength"
                
         qtyReq = await ProcessUserQtyInput(client, usr, item, 40, payload.user_id) 
         if qtyReq == None:
@@ -60,22 +60,37 @@ async def on_raw_reaction_add(payload):
             await msg.edit(embed=order.set_field_at(1, name="Potion", value=item + f" x{qtyReq}", inline=False))
             
     if str(payload.emoji) == '<:PotSpectralInt:873187413424484402>':
-        msg = storage[payload.user_id]
         order = msg.embeds[0]
-        await msg.edit(embed=order.set_field_at(1, name="Potion", value="Potion of Greater Intellect", inline=False))
+        item = "Potion of Spectral Intellect"
+               
+        qtyReq = await ProcessUserQtyInput(client, usr, item, 40, payload.user_id) 
+        if qtyReq == None:
+            return
+        else:
+            await msg.edit(embed=order.set_field_at(1, name="Potion", value=item + f" x{qtyReq}", inline=False))
 
     if str(payload.emoji) == '<:ShadedSharpen:873183190880235530>':
-        msg = storage[payload.user_id]
         order = msg.embeds[0]
-        await msg.edit(embed=order.set_field_at(0, name="Weapon Enhancement", value="Greater Sharpening Stone", inline=False))
+        item = "Shaded Sharpening Stone"
+               
+        qtyReq = await ProcessUserQtyInput(client, usr, item, 6, payload.user_id) 
+        if qtyReq == None:
+            return
+        else:
+            await msg.edit(embed=order.set_field_at(0, name="Weapon Enhancement", value=item + f" x{qtyReq}", inline=False))
 
     if str(payload.emoji) == '<:ShadedWeight:873183450063069194>':
-        msg = storage[payload.user_id]
         order = msg.embeds[0]
-        await msg.edit(embed=order.set_field_at(0, name="Weapon Enhancement", value="Greater Weight Stone", inline=False))
+        item = "Shaded Weightstone"
+               
+        qtyReq = await ProcessUserQtyInput(client, usr, item, 6, payload.user_id) 
+        if qtyReq == None:
+            return
+        else:
+            await msg.edit(embed=order.set_field_at(0, name="Weapon Enhancement", value=item + f" x{qtyReq}", inline=False))
 
-    if str(payload.emoji) == '✅' and payload.CHANNEL_ID != CHANNEL_ID:
-        channel = client.get_channel(CHANNEL_ID)
+    if str(payload.emoji) == '✅' and payload.channel_id != CHANNEL_ID:
+        channel = await client.fetch_channel(CHANNEL_ID)
         user = await client.fetch_user(payload.user_id)
         preorder_embed = storage[payload.user_id].embeds[0]
         preorder_embed.title = "Confirmed RaidPackage Order"
@@ -85,6 +100,7 @@ async def on_raw_reaction_add(payload):
         await order_posting.add_reaction('💵')
         await user.send(f"Your order is confirmed: {order_posting.jump_url}")
         del storage[payload.user_id]
+        await msg.delete()
 
 
 async def cancelOrder(msg, usr_id):
@@ -107,7 +123,7 @@ async def ProcessUserQtyInput(client, usr, item, qtyMax, usr_id):
             raise Exception("mismatch type in ProcessUserQtyInput")
 
     try:
-        msg = await client.wait_for("message", timeout=5.0, check=checkMsg)
+        msg = await client.wait_for("message", timeout=20.0, check=checkMsg)
     except asyncio.TimeoutError:
         await botMsg.delete()
         await cancelOrder(storage[usr_id], usr_id)
