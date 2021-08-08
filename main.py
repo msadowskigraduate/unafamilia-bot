@@ -28,27 +28,6 @@ async def on_ready():
     print(initMsgId)
 
 
-# @client.event
-# async def on_message(message):
-#     if message.author == client.user:
-#         return
-
-#     if message.content.startswith('!raidpackage'):
-#         preorder_embed = discord.Embed(title="Your RaidPackage Order", url='', color=0x109319, description='Choose your options by clicking the emojis below:')
-#         preorder_embed.set_author(name=message.author)
-#         preorder_embed.add_field(name="Weapon Enhancement", value='None', inline=False)
-#         preorder_embed.add_field(name="Potion", value='None', inline=False)
-#         preorder_embed.set_footer(text=f'To confirm order click ✅')
-#         sent_message = await message.author.send(embed=preorder_embed)
-#         storage[message.author.id] = sent_message
-#         await sent_message.add_reaction('<:ShadedWeight:873183450063069194>')
-#         await sent_message.add_reaction('<:ShadedSharpen:873183190880235530>')
-#         await sent_message.add_reaction('<:PotSpectralInt:873187413424484402>')
-#         await sent_message.add_reaction('<:PotSpectralStr:873183439656996895>')
-#         await sent_message.add_reaction('✅')
-#         await sent_message.add_reaction('❌')
-#         await message.delete()
-
 @client.event
 async def on_raw_reaction_add(payload):
     if payload.user_id == client.user.id:
@@ -58,6 +37,7 @@ async def on_raw_reaction_add(payload):
         return
 
     usr = await client.fetch_user(payload.user_id)
+    
 
     if str(payload.emoji == '📝' and payload.channel_id == ORDER_INIT_CHANNEL_ID):
         preorder_embed = discord.Embed(title="Your RaidPackage Order", url='', color=0x109319, description='Choose your options by clicking the emojis below:')
@@ -79,11 +59,9 @@ async def on_raw_reaction_add(payload):
         await reactMsg.remove_reaction('📝', usr)
 
     msg = storage[usr]
-
+    
     if str(payload.emoji) == '❌':
             await cancelOrder(storage[payload.user_id], payload.user_id)
-
-
 
     if str(payload.emoji) == '<:PotSpectralStr:873183439656996895>':
         order = msg.embeds[0]
@@ -144,7 +122,9 @@ async def on_raw_reaction_remove(payload):
     if payload.user_id == client.user.id:
         return
 
-    usr = await client.fetch_user(payload.user_id)
+    if payload.channel_id == ORDER_INIT_CHANNEL_ID:
+        return
+
     msg = storage[payload.user_id]
 
     if str(payload.emoji) == '<:PotSpectralStr:873183439656996895>':
