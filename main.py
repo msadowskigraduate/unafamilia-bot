@@ -1,75 +1,27 @@
+from user_welcome import welcome_member_to_the_guild
+from on_guild_join import intialize_order_channels
 import os
+from raidpackage import raidpackage_intro
 import discord
-from discord import user
-from discord import embeds
 from dotenv import load_dotenv
+
 
 client = discord.Client()
 load_dotenv()
-CHANNEL_ID = os.getenv('CHANNEL_ID')
+CONFIRMED_ORDER_CHANNEL_ID = os.getenv('CONFIRMED_ORDER_CHANNEL_ID')
+ORDER_INIT_CHANNEL_ID = os.getenv('ORDER_INIT_CHANNEL_ID')
 TOKEN = os.getenv('TOKEN')
 
 storage = {}
+initMsgId = 0
 
 @client.event
-async def on_message(message):
-    if message.author == client.user:
-        return
-
-    if message.content.startswith('!raidpackage'):
-        preorder_embed = discord.Embed(title="Your RaidPackage Order", url='', color=0x109319, description='Choose your options by clicking the emjois below:')
-        preorder_embed.set_author(name=message.author)
-        preorder_embed.add_field(name="Weapon Enhancement", value='None', inline=False)
-        preorder_embed.add_field(name="Potion", value='None', inline=False)
-        preorder_embed.set_footer(text=f'To confirm order click ✅')
-        sent_message = await message.author.send(embed=preorder_embed)
-        storage[message.author.id] = sent_message
-        await sent_message.add_reaction('<:greaterweights:873125531007205397>')
-        await sent_message.add_reaction('<:greatersharpen:873125466041643038>')
-        await sent_message.add_reaction('<:inv_alchemy_purple:873124799914860564>')
-        await sent_message.add_reaction('<:inv_alchemy_str:873124695417974814>')
-        await sent_message.add_reaction('✅')
-        await message.delete()
-
-
+async def on_guild_join(guild):
+    confirmed_channel, order_channel = await intialize_order_channels(guild, client, CONFIRMED_ORDER_CHANNEL_ID, ORDER_INIT_CHANNEL_ID)
+    await raidpackage_intro(order_channel, confirmed_channel, client)
+   
 @client.event
-async def on_raw_reaction_add(payload):
-    if payload.user_id == client.user.id:
-        return
-
-    if payload.event_type == 'REACTION_REMOVE':
-        return
-
-    if str(payload.emoji) == '<:inv_alchemy_str:873124695417974814>':
-        msg = storage[payload.user_id]
-        order = msg.embeds[0]
-        await msg.edit(embed=order.set_field_at(1, name="Potion", value="Potion of Greater Strength", inline=False))
-
-    if str(payload.emoji) == '<:inv_alchemy_purple:873124799914860564>':
-        msg = storage[payload.user_id]
-        order = msg.embeds[0]
-        await msg.edit(embed=order.set_field_at(1, name="Potion", value="Potion of Greater Intellect", inline=False))
-
-    if str(payload.emoji) == '<:greatersharpen:873125466041643038>':
-        msg = storage[payload.user_id]
-        order = msg.embeds[0]
-        await msg.edit(embed=order.set_field_at(0, name="Weapon Enhancement", value="Greater Sharpening Stone", inline=False))
-
-    if str(payload.emoji) == '<:greaterweights:873125531007205397>':
-        msg = storage[payload.user_id]
-        order = msg.embeds[0]
-        await msg.edit(embed=order.set_field_at(0, name="Weapon Enhancement", value="Greater Weight Stone", inline=False))
-
-    if str(payload.emoji) == '✅' and payload.channel_id != CHANNEL_ID:
-        channel = client.get_channel(CHANNEL_ID)
-        user = await client.fetch_user(payload.user_id)
-        preorder_embed = storage[payload.user_id].embeds[0]
-        preorder_embed.title = "Confirmed RaidPackage Order"
-        preorder_embed.description = "Chosen Consumable Package:"
-        order_posting = await channel.send(embed=preorder_embed)
-        await order_posting.add_reaction('✅')
-        await order_posting.add_reaction('💵')
-        await user.send(f"Your order is confirmed: {order_posting.jump_url}")
-        del storage[payload.user_id]
+async def on_member_join(member):
+    await welcome_member_to_the_guild(member, client)
 
 client.run(TOKEN)
