@@ -16,7 +16,8 @@ storage = {}
 initMsgId = 0
 
 @client.event
-async def on_guild_join(guild):
+async def on_ready():
+    guild = client.guilds[0]
     confirmed_channel, order_channel = await intialize_order_channels(guild, client, CONFIRMED_ORDER_CHANNEL_ID, ORDER_INIT_CHANNEL_ID)
     await raidpackage_intro(order_channel, confirmed_channel, client)
    

@@ -10,7 +10,7 @@ async def intialize_order_channels(guild, client, confirmed_channel_name, order_
 
         if chnl.name == order_channel_name:
             order_channel = chnl
-            order_channel.purge(check=lambda m: m.author == client.user)
+            await order_channel.purge(check=lambda m: m.author == client.user)
             continue
 
     if confirmed_order_channel == None:
