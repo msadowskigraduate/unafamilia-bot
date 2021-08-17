@@ -15,9 +15,10 @@ async def intialize_order_channels(guild, client, confirmed_channel_name, order_
 
     if confirmed_order_channel == None:
         permissions = {
-             guild.default_role: discord.PermissionOverwrite(send_messages=False)
+            guild.default_role: discord.PermissionOverwrite(send_messages=False),
         }
         confirmed_order_channel = await guild.create_text_channel(confirmed_channel_name, overwrites=permissions)
+        await confirmed_order_channel.set_permissions(guild.me, send_messages=True)
 
     if order_channel == None:
         order_channel = await guild.create_text_channel(order_channel_name)
