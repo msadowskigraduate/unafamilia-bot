@@ -1,0 +1,98 @@
+[{
+    "position_id": 0,
+    "item_name": "Embalmer's Oil",
+    "item_category": "Weapon Enhancement",
+    "item_max": 6,
+    "item_emoji": "<:enhance_embalmers_oil:877121150554091550>"
+},
+{
+    "position_id": 0,
+    "item_name": "Shadowcore Oil",
+    "item_category": "Weapon Enhancement",
+    "item_max": 6,
+    "item_emoji": "<:enhance_shadowcore_oil:877121150256312321>"
+},
+{
+    "position_id": 0,
+    "item_name": "Shaded Sharpening Stone",
+    "item_category": "Weapon Enhancement",
+    "item_max": 6,
+    "item_emoji": "<:enhance_shaded_sharpening_stone:877084917253668904>"
+},
+{
+    "position_id": 0,
+    "item_name": "Shaded Weightstone",
+    "item_category": "Weapon Enhancement",
+    "item_max": 6,
+    "item_emoji": "<:enhance_shaded_weightstone:877084917215952956>"
+},
+{
+    "position_id": 1,
+    "item_name": "Potion of Spectral Strength",
+    "item_category": "Combat Potion",
+    "item_max": 40,
+    "item_emoji": "<:potion_spectral_strength:877078715010523196>"
+},
+{
+    "position_id": 1,
+    "item_name": "Potion of Spectral Intellect",
+    "item_category": "Combat Potion",
+    "item_max": 40,
+    "item_emoji": "<:potion_spectral_intellect:877078714901471233>"
+},
+{
+    "position_id": 1,
+    "item_name": "Potion of Spectral Agility",
+    "item_category": "Combat Potion",
+    "item_max": 40,
+    "item_emoji": "<:potion_spectral_agility:877078714997932102>"
+},
+{
+    "position_id": 1,
+    "item_name": "Potion of Phantom Fire",
+    "item_category": "Combat Potion",
+    "item_max": 40,
+    "item_emoji": "<:potion_phatom_power:877078715044102144>"
+},
+{
+    "position_id": 2,
+    "item_name": "Augment Rune",
+    "item_category": "Augment Runes",
+    "item_max": 20,
+    "item_emoji": "<:enhance_veiled_augment_rune:877106847620956161>"
+},
+{
+    "position_id": 3,
+    "item_name": "Heavy Desolate Armor Kit",
+    "item_category": "Armor Kits",
+    "item_max": 2,
+    "item_emoji": "<:enhance_heavy_armor_kit:877106847901974568>"
+},
+{
+    "position_id": 4,
+    "item_name": "Spiritual Healing Potion",
+    "item_category": "Utility Potions",
+    "item_max": 20,
+    "item_emoji": "<:potion_spiritual_healing:877078715010539540>"
+},
+{
+    "position_id": 4,
+    "item_name": "Spiritual Mana Potion",
+    "item_category": "Utility Potions",
+    "item_max": 20,
+    "item_emoji": "<:potion_spiritual_mana:877078715060850739>"
+},
+{
+    "position_id": 4,
+    "item_name": "Spiritual Rejuvenation Potion",
+    "item_category": "Utility Potions",
+    "item_max": 20,
+    "item_emoji": "<:potion_spiritual_rejuvenation:877078714997964831>"
+},
+{
+    "position_id": 5,
+    "item_name": "Tome of the Still Mind",
+    "item_category": "Misc",
+    "item_max": 10,
+    "item_emoji": "<:misc_tome:877106847746777089>"
+}]
