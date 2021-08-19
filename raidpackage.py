@@ -94,12 +94,14 @@ async def wait_for_order_reaction_add(payload, client, sent_message, preorder_em
             else:
                 await sent_message.edit(embed=preorder_embed.set_field_at(item.position_id, name=item.item_category, 
                                         value=item.item_name + f" x{qtyReq}", inline=False))
+                break
 
 
 async def wait_for_order_reaction_remove(reaction_remove_payload, sent_message, preorder_embed):
     for item in item_definitions.items:
         if str(reaction_remove_payload.emoji) == item.item_emoji:
             await sent_message.edit(embed=preorder_embed.set_field_at(item.position_id, name=item.item_category, value='None', inline=False))
+            break
     
 
 async def cancel_order(msg, usr_id, client):
