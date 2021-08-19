@@ -1,151 +1,162 @@
 import asyncio
-from logging import error
 import discord
-from discord.client import Client
 import item_definitions
-import json
 
-_error_messages = []
+class RaidPackageClient():
 
+    class Order:
+        def __init__(self, id:str, message: discord.Message, author: discord.Member, preorder_embed: discord.Embed):
+            self.id = id
+            self.message = message
+            self.author = author
+            self.preorder_embed = preorder_embed
 
-async def raidpackage_intro(order_channel, confirmed_channel, client):
-    initPost = discord.Embed(title="Una Familia Raid Consumables Ordering Service", url='', color=0x109319, description='Click the 📝 reaction below to begin your order')
-    initPost.add_field(name="Intro", value="Welcome to the raid consumable ordering service. You can use this service to order consumables before a raid night at a cheaper price than the auction house.", inline=False)
-    initPost.add_field(name="Starting a new order", value="To begin, click the 📝 emoji below, and the bot will send you a DM. Simply click the items you want and type the quantities. Click the green tick to confirm your order.", inline=False)
-    initPost.add_field(name="Delivery and payment", value="An officer will mail you the items, and message you the price to deposit into the guild bank before the raid begins.", inline=False)
-    initMsg = await order_channel.send(embed=initPost)
-    await initMsg.add_reaction(item_definitions.REACTION_NEW_ORDER)
-    
-    def check_channel_and_user_not_client(payload):
-        return str(payload.emoji) == item_definitions.REACTION_NEW_ORDER and payload.channel_id == order_channel.id and payload.user_id != client.user.id
-    
-    reaction_payload = await client.wait_for('raw_reaction_add', check=check_channel_and_user_not_client)
-    usr = await client.fetch_user(reaction_payload.user_id)
-    sent_message, preorder_embed = await create_dm_preorder(usr, reaction_payload, client)
+    __init_message :discord.Message = None
 
+    #Correlation between message and Order
+    __responding_players = {}
 
-    #Clean up reaction
-    await initMsg.remove_reaction(item_definitions.REACTION_NEW_ORDER, usr)
+    def __init__(self, client: discord.Client, order_channel: discord.TextChannel, confirm_channel: discord.TextChannel):
+        self.client = client
+        self.order_channel = order_channel
+        self.confirm_channel = confirm_channel
 
-    async def listen(client, sent_message, preorder_embed, usr, confirmed_channel):
+    async def initialize_client(self):
+        initPost = discord.Embed(title="Una Familia Raid Consumables Ordering Service", url='', color=0x109319, description='Click the 📝 reaction below to begin your order')
+        initPost.add_field(name="Intro", value="Welcome to the raid consumable ordering service. You can use this service to order consumables before a raid night at a cheaper price than the auction house.", inline=False)
+        initPost.add_field(name="Starting a new order", value="To begin, click the 📝 emoji below, and the bot will send you a DM. Simply click the items you want and type the quantities. Click the green tick to confirm your order.", inline=False)
+        initPost.add_field(name="Delivery and payment", value="An officer will mail you the items, and message you the price to deposit into the guild bank before the raid begins.", inline=False)
+        self.__init_message = await self.order_channel.send(embed=initPost)
+        await self.__init_message.add_reaction(item_definitions.REACTION_NEW_ORDER)
+
+    async def handle_reaction(self, payload: discord.RawReactionActionEvent):
+        if str(payload.emoji) == item_definitions.REACTION_NEW_ORDER and payload.channel_id == self.order_channel.id and payload.user_id != self.client.user.id:
+            await self.__listen_for_player_reaction(payload)
+
+        order: self.Order = self.__responding_players.get(payload.message_id)
+        if order is not None:
+            await self.__listen_for_order_specification(payload, order)
+
+    async def __listen_for_player_reaction(self, payload: discord.RawReactionActionEvent):
+        usr = await self.client.fetch_user(payload.user_id)
+        sent_message, preorder_embed = await self.__create_dm_preorder(usr, payload)
+        await self.__init_message.remove_reaction(item_definitions.REACTION_NEW_ORDER, usr)
+        self.__responding_players[sent_message.id] = self.Order(sent_message.id, sent_message, usr, preorder_embed)
+
+    async def __listen_for_order_specification(self, payload: discord.RawReactionActionEvent, order: Order):
         #Process Order Reactions
-        pending_reactions = [client.wait_for('raw_reaction_remove', check=lambda payload: payload.user_id != client.user.id),
-                client.wait_for('raw_reaction_add', check=lambda payload: payload.user_id != client.user.id)]
-        processed_reactions, pending_reactions = await asyncio.wait(pending_reactions, return_when=asyncio.FIRST_COMPLETED)
+        if payload.event_type == 'REACTION_ADD':
+            await self.__wait_for_order_reaction_add(payload, order)
 
-        for processed_reaction in processed_reactions:
-            payload = await processed_reaction
-            if payload.event_type == 'REACTION_ADD':
-                await wait_for_order_reaction_add(payload, client, sent_message, preorder_embed, usr, confirmed_channel)
+        if payload.event_type == 'REACTION_REMOVE':
+            await self.__wait_for_order_reaction_remove(payload, order)
+        
+        if str(payload.emoji) == item_definitions.REACTION_ACCEPT and payload.channel_id != self.confirm_channel:
+            user = await self.client.fetch_user(payload.user_id)
+            order.preorder_embed.title = "Confirmed RaidPackage Order"
+            order.preorder_embed.description = "Chosen Consumable Package:"
+            order.preorder_embed.set_footer(text="")
+            order_posting = await self.confirm_channel.send(embed=order.preorder_embed)
+            await order_posting.add_reaction('✅')
+            await order_posting.add_reaction('💵')
+            await user.send(f"Your order is confirmed: {order_posting.jump_url}")
+            await order.message.delete()
+            self.__gracefully_complete_order(order)
+            return
 
-            if payload.event_type == 'REACTION_REMOVE':
-                await wait_for_order_reaction_remove(payload, sent_message, preorder_embed)
-            
-            if str(payload.emoji) == item_definitions.REACTION_ACCEPT and payload.channel_id != confirmed_channel:
-                user = await client.fetch_user(payload.user_id)
-                preorder_embed.title = "Confirmed RaidPackage Order"
-                preorder_embed.description = "Chosen Consumable Package:"
-                preorder_embed.set_footer(text="")
-                order_posting = await confirmed_channel.send(embed=preorder_embed)
-                await order_posting.add_reaction('✅')
-                await order_posting.add_reaction('💵')
-                await user.send(f"Your order is confirmed: {order_posting.jump_url}")
-                await sent_message.delete()
-                return
+        if str(payload.emoji) == item_definitions.REACTION_CANCEL:
+            await self.__cancel_order(order.message, payload.user_id)
+            self.__gracefully_complete_order(order)
+            return
 
-            if str(payload.emoji) == item_definitions.REACTION_CANCEL:
-                await cancel_order(sent_message, payload.user_id, client)
-                return
+    async def __create_dm_preorder(self, usr, reaction_payload):
+        # Create DMs 
+        usr = await self.client.fetch_user(reaction_payload.user_id)
+        preorder_embed = discord.Embed(title="Your RaidPackage Order", url='', color=0x109319, description='Choose your options by clicking the emojis below:')
+        preorder_embed.set_author(name=usr)
 
-        await listen(client, sent_message, preorder_embed, usr, confirmed_channel)
-    
-    await listen(client, sent_message, preorder_embed, usr, confirmed_channel)
+        current_pos = 0
+        for item in item_definitions.items:
+            if item.position_id == current_pos:
+                preorder_embed.add_field(name=item.item_category, value='None', inline=False)
+                current_pos += 1
 
-async def create_dm_preorder(usr, reaction_payload, client):
-    # Create DMs 
-    usr = await client.fetch_user(reaction_payload.user_id)
-    preorder_embed = discord.Embed(title="Your RaidPackage Order", url='', color=0x109319, description='Choose your options by clicking the emojis below:')
-    preorder_embed.set_author(name=usr)
+        preorder_embed.set_footer(text=f'To confirm order click ✅\n To cancel order click ❌')
 
-    current_pos = 0
-    for item in item_definitions.items:
-        if item.position_id == current_pos:
-            preorder_embed.add_field(name=item.item_category, value='None', inline=False)
-            current_pos += 1
+        sent_message = await usr.send(embed=preorder_embed)
 
-    preorder_embed.set_footer(text=f'To confirm order click ✅\n To cancel order click ❌')
+        for item in item_definitions.items:
+            await sent_message.add_reaction(item.item_emoji)
 
-    sent_message = await usr.send(embed=preorder_embed)
+        await sent_message.add_reaction(item_definitions.REACTION_ACCEPT)
+        await sent_message.add_reaction(item_definitions.REACTION_CANCEL)
+        return sent_message, preorder_embed
 
-    for item in item_definitions.items:
-        await sent_message.add_reaction(item.item_emoji)
-
-    await sent_message.add_reaction(item_definitions.REACTION_ACCEPT)
-    await sent_message.add_reaction(item_definitions.REACTION_CANCEL)
-    return sent_message, preorder_embed
+    async def __wait_for_order_reaction_add(self, payload, order: Order):  
+        for item in item_definitions.items:
+            if str(payload.emoji) == item.item_emoji:
+                qtyReq = await self.__process_user_quantity_input(self.client, order.author, item.item_name, item.item_max, payload.user_id)
+                if qtyReq == None:
+                    return
+                else:
+                    await order.message.edit(embed=order.preorder_embed.set_field_at(item.position_id, name=item.item_category, 
+                                            value=item.item_name + f" x{qtyReq}", inline=False))
+                    break
 
 
-async def wait_for_order_reaction_add(payload, client, sent_message, preorder_embed, usr, order_channel):  
-    for item in item_definitions.items:
-        if str(payload.emoji) == item.item_emoji:
-            qtyReq = await process_user_quantity_input(client, usr, item, payload.user_id) 
-            if qtyReq == None:
-                return
-            else:
-                await sent_message.edit(embed=preorder_embed.set_field_at(item.position_id, name=item.item_category, 
-                                        value=item.item_name + f" x{qtyReq}", inline=False))
+    async def __wait_for_order_reaction_remove(self, reaction_remove_payload, order: Order):
+        for item in item_definitions.items:
+            if str(reaction_remove_payload.emoji) == item.item_emoji:
+                await order.message.edit(embed=order.preorder_embed.set_field_at(item.position_id, name=item.item_category, value='None', inline=False))
                 break
+        
 
+    async def __cancel_order(self, msg, usr_id):
+        await msg.delete()
+        cancelMsg = discord.Embed(title="Order Cancelled", url='', color=0x109319)
+        usr = await self.client.fetch_user(usr_id)
+        await usr.send(embed=cancelMsg)
 
-async def wait_for_order_reaction_remove(reaction_remove_payload, sent_message, preorder_embed):
-    for item in item_definitions.items:
-        if str(reaction_remove_payload.emoji) == item.item_emoji:
-            await sent_message.edit(embed=preorder_embed.set_field_at(item.position_id, name=item.item_category, value='None', inline=False))
-            break
-    
+    def __gracefully_complete_order(self, order: Order):
+        del self.__responding_players[order.id]
 
-async def cancel_order(msg, usr_id, client):
-    await msg.delete()
-    cancelMsg = discord.Embed(title="Order Cancelled", url='', color=0x109319)
-    usr = await client.fetch_user(usr_id)
-    await usr.send(embed=cancelMsg)
+    async def __process_user_quantity_input(self, client, usr, item, qtyMax, usr_id):
+        __error_messages = []
+        qtyEmbed = discord.Embed(title=item, url='', color=0x109319, description=f"Enter quantity required, for example 20 (Max {qtyMax})")
+        qtyEmbed.set_footer(text="If the bot doesn't respond, un-click and re-click the reaction")
+        botMsg = await usr.send(embed=qtyEmbed)
 
-
-async def process_user_quantity_input(client, usr, item, usr_id):
-    qtyEmbed = discord.Embed(title=item.item_name, url='', color=0x109319, description=f"Enter quantity required, for example 20 (Max {item.item_max})")
-    qtyEmbed.set_footer(text="If the bot doesn't respond, un-click and re-click the reaction")
-    botMsg = await usr.send(embed=qtyEmbed)
-
-    def checkMsg(msg):
-        if msg.content != "":
-            qty = int(msg.content)
-            return True
+        def checkMsg(msg):
+            if msg.content != "":
+                qty = int(msg.content)
+                return True
+                        
+        try:
+            msg = await client.wait_for("message", timeout=20.0, check=checkMsg)
+        except asyncio.TimeoutError:
+            await botMsg.delete()
+            msg = await client.wait_for("message", timeout=20.0, check=checkMsg)
+            await self.__cancel_order(msg, usr_id, client)
+        
+        # non-numeric string
+        except TypeError:
+            error_msg = await usr.send(f"You must enter a number - please unclick and reclick the {item} emoji")
+            __error_messages.append(error_msg)
+        except ValueError:
+            await botMsg.delete()
+            error_msg = await usr.send(f"You must enter a number - please unclick and reclick the {item} emoji")
+            __error_messages.append(error_msg)
+        else:
+            await botMsg.delete()
                     
-    try:
-        msg = await client.wait_for("message", timeout=20.0, check=checkMsg)
-    except asyncio.TimeoutError:
-        await botMsg.delete()
-        msg = await client.wait_for("message", timeout=20.0, check=checkMsg)
-        await cancel_order(msg, usr_id, client)
-    
-    # non-numeric string
-    except TypeError:
-        error_msg = await usr.send(f"You must enter a number - please unclick and reclick the {item.item_name} emoji")
-        _error_messages.append(error_msg)
-    except ValueError:
-        await botMsg.delete()
-        error_msg = await usr.send(f"You must enter a number - please unclick and reclick the {item.item_name} emoji")
-        _error_messages.append(error_msg)
-    else:
-        await botMsg.delete()
-        
-        if len(_error_messages) > 0:
-            for error_msg in _error_messages:
-                await error_msg.delete()
-                _error_messages.remove(error_msg)
-        
-    if int(msg.content) <= item.item_max:
-        return int(msg.content)
-    else:
-        error_msg = await usr.send(f"""You may only purchase a maximum of {item.item_max} {item.item_name} in a single order - please unclick and reclick the {item.item_name} emoji""")
-        _error_messages.append(error_msg)
+        if int(msg.content) <= item.item_max:
+            return int(msg.content)
+        else:
+            error_msg = await usr.send(f"""You may only purchase a maximum of {item.item_max} {item.item_name} in a single order - please unclick and reclick the {item.item_name} emoji""")
+            __error_messages.append(error_msg)
+
+            if len(__error_messages) > 0:
+                for error_msg in __error_messages:
+                    await error_msg.delete()
+                    __error_messages.remove(error_msg)
+            return int(msg.content)
