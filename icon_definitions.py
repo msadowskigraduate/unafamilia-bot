@@ -28,3 +28,16 @@ emoji_armor_kit='<:enhance_heavy_armor_kit:877106847901974568>'
 # Tomes
 emoji_tome='<:misc_tome:877106847746777089>'
 
+class Item:
+    position_id: int
+    item_name: str
+    item_category: str
+    item_max: int
+    item_emoji: str
+
+def __init__(self, position_id, item_name, item_category, item_max, item_emoji):
+    self.position_id = position_id
+    self.item_name = item_name
+    self.item_category = item_category
+    self.item_max = item_max
+    self.item_emoji = item_emoji

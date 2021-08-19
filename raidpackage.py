@@ -3,8 +3,10 @@ from logging import error
 import discord
 from discord.client import Client
 import icon_definitions
+import json
 
 _error_messages = []
+_items = []
 
 async def raidpackage_intro(order_channel, confirmed_channel, client):
     initPost = discord.Embed(title="Una Familia Raid Consumables Ordering Service", url='', color=0x109319, description='Click the 📝 reaction below to begin your order')
@@ -93,6 +95,10 @@ async def create_dm_preorder(usr, reaction_payload, client):
     await sent_message.add_reaction(icon_definitions.REACTION_CANCEL)
     return sent_message, preorder_embed
 
+with open('resources/items.json') as f:
+    item_data = json.load(f)
+    print(item_data)
+
 async def wait_for_order_reaction_add(payload, client, sent_message, preorder_embed, usr, order_channel):  
 
     if str(payload.emoji) == icon_definitions.emoji_embalmers_oil:
@@ -104,123 +110,123 @@ async def wait_for_order_reaction_add(payload, client, sent_message, preorder_em
         else:
             await sent_message.edit(embed=preorder_embed.set_field_at(0, name="Weapon Enhancement", value=item + f" x{qtyReq}", inline=False))
 
-    if str(payload.emoji) == icon_definitions.emoji_shadowcore_oil:
-        item = "Embalmer's Oil"
+    # if str(payload.emoji) == icon_definitions.emoji_shadowcore_oil:
+    #     item = "Embalmer's Oil"
                
-        qtyReq = await process_user_quantity_input(client, usr, item, 6, payload.user_id) 
-        if qtyReq == None:
-            return
-        else:
-            await sent_message.edit(embed=preorder_embed.set_field_at(0, name="Weapon Enhancement", value=item + f" x{qtyReq}", inline=False))
+    #     qtyReq = await process_user_quantity_input(client, usr, item, 6, payload.user_id) 
+    #     if qtyReq == None:
+    #         return
+    #     else:
+    #         await sent_message.edit(embed=preorder_embed.set_field_at(0, name="Weapon Enhancement", value=item + f" x{qtyReq}", inline=False))
     
-    if str(payload.emoji) == icon_definitions.emoji_shaded_sharpen:
-        item = "Shaded Sharpening Stone"
+    # if str(payload.emoji) == icon_definitions.emoji_shaded_sharpen:
+    #     item = "Shaded Sharpening Stone"
                
-        qtyReq = await process_user_quantity_input(client, usr, item, 6, payload.user_id) 
-        if qtyReq == None:
-            return
-        else:
-            await sent_message.edit(embed=preorder_embed.set_field_at(0, name="Weapon Enhancement", value=item + f" x{qtyReq}", inline=False))
+    #     qtyReq = await process_user_quantity_input(client, usr, item, 6, payload.user_id) 
+    #     if qtyReq == None:
+    #         return
+    #     else:
+    #         await sent_message.edit(embed=preorder_embed.set_field_at(0, name="Weapon Enhancement", value=item + f" x{qtyReq}", inline=False))
 
-    if str(payload.emoji) == icon_definitions.emoji_shaded_weightstone:
-        item = "Shaded Weightstone"
+    # if str(payload.emoji) == icon_definitions.emoji_shaded_weightstone:
+    #     item = "Shaded Weightstone"
                
-        qtyReq = await process_user_quantity_input(client, usr, item, 6, payload.user_id) 
-        if qtyReq == None:
-            return
-        else:
-            await sent_message.edit(embed=preorder_embed.set_field_at(0, name="Weapon Enhancement", value=item + f" x{qtyReq}", inline=False))
+    #     qtyReq = await process_user_quantity_input(client, usr, item, 6, payload.user_id) 
+    #     if qtyReq == None:
+    #         return
+    #     else:
+    #         await sent_message.edit(embed=preorder_embed.set_field_at(0, name="Weapon Enhancement", value=item + f" x{qtyReq}", inline=False))
     
-    if str(payload.emoji) == icon_definitions.emoji_spectral_str:
-        item = "Potion of Spectral Strength"
+    # if str(payload.emoji) == icon_definitions.emoji_spectral_str:
+    #     item = "Potion of Spectral Strength"
                
-        qtyReq = await process_user_quantity_input(client, usr, item, 40, payload.user_id) 
-        if qtyReq == None:
-            return
-        else:
-            await sent_message.edit(embed=preorder_embed.set_field_at(1, name="Combat Potions", value=item + f" x{qtyReq}", inline=False))
+    #     qtyReq = await process_user_quantity_input(client, usr, item, 40, payload.user_id) 
+    #     if qtyReq == None:
+    #         return
+    #     else:
+    #         await sent_message.edit(embed=preorder_embed.set_field_at(1, name="Combat Potions", value=item + f" x{qtyReq}", inline=False))
             
-    if str(payload.emoji) == icon_definitions.emoji_spectral_int:
-        item = "Potion of Spectral Intellect"
+    # if str(payload.emoji) == icon_definitions.emoji_spectral_int:
+    #     item = "Potion of Spectral Intellect"
                
-        qtyReq = await process_user_quantity_input(client, usr, item, 40, payload.user_id) 
-        if qtyReq == None:
-            return
-        else:
-            await sent_message.edit(embed=preorder_embed.set_field_at(1, name="Combat Potions", value=item + f" x{qtyReq}", inline=False))
+    #     qtyReq = await process_user_quantity_input(client, usr, item, 40, payload.user_id) 
+    #     if qtyReq == None:
+    #         return
+    #     else:
+    #         await sent_message.edit(embed=preorder_embed.set_field_at(1, name="Combat Potions", value=item + f" x{qtyReq}", inline=False))
 
-    if str(payload.emoji) == icon_definitions.emoji_spectral_agi:
-        item = "Potion of Spectral Agility"
+    # if str(payload.emoji) == icon_definitions.emoji_spectral_agi:
+    #     item = "Potion of Spectral Agility"
                
-        qtyReq = await process_user_quantity_input(client, usr, item, 40, payload.user_id) 
-        if qtyReq == None:
-            return
-        else:
-            await sent_message.edit(embed=preorder_embed.set_field_at(1, name="Combat Potions", value=item + f" x{qtyReq}", inline=False))
+    #     qtyReq = await process_user_quantity_input(client, usr, item, 40, payload.user_id) 
+    #     if qtyReq == None:
+    #         return
+    #     else:
+    #         await sent_message.edit(embed=preorder_embed.set_field_at(1, name="Combat Potions", value=item + f" x{qtyReq}", inline=False))
 
-    if str(payload.emoji) == icon_definitions.emoji_phamtom_fire:
-        item = "Potion of Phantom Fire"
+    # if str(payload.emoji) == icon_definitions.emoji_phamtom_fire:
+    #     item = "Potion of Phantom Fire"
                
-        qtyReq = await process_user_quantity_input(client, usr, item, 40, payload.user_id) 
-        if qtyReq == None:
-            return
-        else:
-            await sent_message.edit(embed=preorder_embed.set_field_at(1, name="Combat Potions", value=item + f" x{qtyReq}", inline=False))
+    #     qtyReq = await process_user_quantity_input(client, usr, item, 40, payload.user_id) 
+    #     if qtyReq == None:
+    #         return
+    #     else:
+    #         await sent_message.edit(embed=preorder_embed.set_field_at(1, name="Combat Potions", value=item + f" x{qtyReq}", inline=False))
 
-    if str(payload.emoji) == icon_definitions.emoji_augment_rune:
-        item = "Augment Runes"
+    # if str(payload.emoji) == icon_definitions.emoji_augment_rune:
+    #     item = "Augment Runes"
                
-        qtyReq = await process_user_quantity_input(client, usr, item, 20, payload.user_id) 
-        if qtyReq == None:
-            return
-        else:
-            await sent_message.edit(embed=preorder_embed.set_field_at(2, name="Augment Runes", value=item + f" x{qtyReq}", inline=False))
+    #     qtyReq = await process_user_quantity_input(client, usr, item, 20, payload.user_id) 
+    #     if qtyReq == None:
+    #         return
+    #     else:
+    #         await sent_message.edit(embed=preorder_embed.set_field_at(2, name="Augment Runes", value=item + f" x{qtyReq}", inline=False))
 
-    if str(payload.emoji) == icon_definitions.emoji_armor_kit:
-        item = "Heavy Desolate Armor Kit"
+    # if str(payload.emoji) == icon_definitions.emoji_armor_kit:
+    #     item = "Heavy Desolate Armor Kit"
                
-        qtyReq = await process_user_quantity_input(client, usr, item, 2, payload.user_id) 
-        if qtyReq == None:
-            return
-        else:
-            await sent_message.edit(embed=preorder_embed.set_field_at(3, name="Armor Kits", value=item + f" x{qtyReq}", inline=False))
+    #     qtyReq = await process_user_quantity_input(client, usr, item, 2, payload.user_id) 
+    #     if qtyReq == None:
+    #         return
+    #     else:
+    #         await sent_message.edit(embed=preorder_embed.set_field_at(3, name="Armor Kits", value=item + f" x{qtyReq}", inline=False))
 
-    if str(payload.emoji) == icon_definitions.emoji_healing_pot:
-        item = "Spiritual Healing Potion"
+    # if str(payload.emoji) == icon_definitions.emoji_healing_pot:
+    #     item = "Spiritual Healing Potion"
                
-        qtyReq = await process_user_quantity_input(client, usr, item, 20, payload.user_id) 
-        if qtyReq == None:
-            return
-        else:
-            await sent_message.edit(embed=preorder_embed.set_field_at(4, name="Utility Potions", value=item + f" x{qtyReq}", inline=False))
+    #     qtyReq = await process_user_quantity_input(client, usr, item, 20, payload.user_id) 
+    #     if qtyReq == None:
+    #         return
+    #     else:
+    #         await sent_message.edit(embed=preorder_embed.set_field_at(4, name="Utility Potions", value=item + f" x{qtyReq}", inline=False))
 
-    if str(payload.emoji) == icon_definitions.emoji_mana_pot:
-        item = "Spiritual Mana Potion"
+    # if str(payload.emoji) == icon_definitions.emoji_mana_pot:
+    #     item = "Spiritual Mana Potion"
                
-        qtyReq = await process_user_quantity_input(client, usr, item, 20, payload.user_id) 
-        if qtyReq == None:
-            return
-        else:
-            await sent_message.edit(embed=preorder_embed.set_field_at(4, name="Utility Potions", value=item + f" x{qtyReq}", inline=False))
+    #     qtyReq = await process_user_quantity_input(client, usr, item, 20, payload.user_id) 
+    #     if qtyReq == None:
+    #         return
+    #     else:
+    #         await sent_message.edit(embed=preorder_embed.set_field_at(4, name="Utility Potions", value=item + f" x{qtyReq}", inline=False))
     
-    if str(payload.emoji) == icon_definitions.emoji_rejuve_pot:
-        item = "Spiritual Rejuvenation Potion"
+    # if str(payload.emoji) == icon_definitions.emoji_rejuve_pot:
+    #     item = "Spiritual Rejuvenation Potion"
                
-        qtyReq = await process_user_quantity_input(client, usr, item, 20, payload.user_id) 
-        if qtyReq == None:
-            return
-        else:
-            await sent_message.edit(embed=preorder_embed.set_field_at(4, name="Utility Potions", value=item + f" x{qtyReq}", inline=False))
+    #     qtyReq = await process_user_quantity_input(client, usr, item, 20, payload.user_id) 
+    #     if qtyReq == None:
+    #         return
+    #     else:
+    #         await sent_message.edit(embed=preorder_embed.set_field_at(4, name="Utility Potions", value=item + f" x{qtyReq}", inline=False))
 
 
-    if str(payload.emoji) == icon_definitions.emoji_tome:
-        item = "Tome of the Still Mind"
+    # if str(payload.emoji) == icon_definitions.emoji_tome:
+    #     item = "Tome of the Still Mind"
                
-        qtyReq = await process_user_quantity_input(client, usr, item, 20, payload.user_id) 
-        if qtyReq == None:
-            return
-        else:
-            await sent_message.edit(embed=preorder_embed.set_field_at(5, name="Extras", value=item + f" x{qtyReq}", inline=False))
+    #     qtyReq = await process_user_quantity_input(client, usr, item, 20, payload.user_id) 
+    #     if qtyReq == None:
+    #         return
+    #     else:
+    #         await sent_message.edit(embed=preorder_embed.set_field_at(5, name="Extras", value=item + f" x{qtyReq}", inline=False))
 
     
 async def wait_for_order_reaction_remove(reaction_remove_payload, sent_message, preorder_embed):
