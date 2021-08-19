@@ -4,7 +4,7 @@ import discord
 from discord.client import Client
 import icon_definitions
 
-error_messages = []
+_error_messages = []
 
 async def raidpackage_intro(order_channel, confirmed_channel, client):
     initPost = discord.Embed(title="Una Familia Raid Consumables Ordering Service", url='', color=0x109319, description='Click the 📝 reaction below to begin your order')
@@ -297,12 +297,12 @@ async def process_user_quantity_input(client, usr, item, qtyMax, usr_id):
     except ValueError:
         await botMsg.delete()
         error_msg = await usr.send(f"You must enter a number - please unclick and reclick the {item} emoji")
-        error_messages.append(error_msg)
+        _error_messages.append(error_msg)
     else:
         await botMsg.delete()
         
-        if len(error_messages) > 0:
-            for error_msg in error_messages:
+        if len(_error_messages) > 0:
+            for error_msg in _error_messages:
                 await error_msg.delete()
-                error_messages.remove(error_msg)
+                _error_messages.remove(error_msg)
         return int(msg.content)
