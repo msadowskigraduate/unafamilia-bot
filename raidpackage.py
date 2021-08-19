@@ -30,7 +30,10 @@ class RaidPackageClient():
         await self.__init_message.add_reaction(item_definitions.REACTION_NEW_ORDER)
 
     async def handle_reaction(self, payload: discord.RawReactionActionEvent):
-        if str(payload.emoji) == item_definitions.REACTION_NEW_ORDER and payload.channel_id == self.order_channel.id and payload.user_id != self.client.user.id:
+        if payload.user_id == self.client.user.id:
+            return
+
+        if str(payload.emoji) == item_definitions.REACTION_NEW_ORDER and payload.event_type == 'REACTION_ADD' and payload.channel_id == self.order_channel.id:
             await self.__listen_for_player_reaction(payload)
 
         order: self.Order = self.__responding_players.get(payload.message_id)
@@ -149,10 +152,10 @@ class RaidPackageClient():
         else:
             await botMsg.delete()
                     
-        if int(msg.content) <= item.item_max:
+        if int(msg.content) <= qtyMax:
             return int(msg.content)
         else:
-            error_msg = await usr.send(f"""You may only purchase a maximum of {item.item_max} {item.item_name} in a single order - please unclick and reclick the {item.item_name} emoji""")
+            error_msg = await usr.send(f"""You may only purchase a maximum of {qtyMax} {item} in a single order - please unclick and reclick the {item} emoji""")
             __error_messages.append(error_msg)
 
             if len(__error_messages) > 0:
