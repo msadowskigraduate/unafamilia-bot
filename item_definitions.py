@@ -20,12 +20,7 @@ def populate_items():
     with open('resources/items.json') as f:
         json_item_data = json.load(f)
 
-    i = 0
     for json_object in json_item_data:
         item = Item(**json_object)
         items.append(item)
-        i += 1
-
-    for item in items:
-        print(item.item_name)
 

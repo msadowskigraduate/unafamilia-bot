@@ -88,7 +88,7 @@ async def create_dm_preorder(usr, reaction_payload, client):
 async def wait_for_order_reaction_add(payload, client, sent_message, preorder_embed, usr, order_channel):  
     for item in item_definitions.items:
         if str(payload.emoji) == item.item_emoji:
-            qtyReq = await process_user_quantity_input(client, usr, item.item_name, item.item_max, payload.user_id) 
+            qtyReq = await process_user_quantity_input(client, usr, item, payload.user_id) 
             if qtyReq == None:
                 return
             else:
@@ -111,14 +111,13 @@ async def cancel_order(msg, usr_id, client):
     await usr.send(embed=cancelMsg)
 
 
-async def process_user_quantity_input(client, usr, item, qtyMax, usr_id):
-    qtyEmbed = discord.Embed(title=item, url='', color=0x109319, description=f"Enter quantity required, for example 20 (Max {qtyMax})")
+async def process_user_quantity_input(client, usr, item, usr_id):
+    qtyEmbed = discord.Embed(title=item.item_name, url='', color=0x109319, description=f"Enter quantity required, for example 20 (Max {item.item_max})")
     qtyEmbed.set_footer(text="If the bot doesn't respond, un-click and re-click the reaction")
     botMsg = await usr.send(embed=qtyEmbed)
 
     def checkMsg(msg):
         if msg.content != "":
-            print(msg.content)
             qty = int(msg.content)
             return True
                     
@@ -131,11 +130,11 @@ async def process_user_quantity_input(client, usr, item, qtyMax, usr_id):
     
     # non-numeric string
     except TypeError:
-        error_msg = await usr.send(f"You must enter a number - please unclick and reclick the {item} emoji")
+        error_msg = await usr.send(f"You must enter a number - please unclick and reclick the {item.item_name} emoji")
         _error_messages.append(error_msg)
     except ValueError:
         await botMsg.delete()
-        error_msg = await usr.send(f"You must enter a number - please unclick and reclick the {item} emoji")
+        error_msg = await usr.send(f"You must enter a number - please unclick and reclick the {item.item_name} emoji")
         _error_messages.append(error_msg)
     else:
         await botMsg.delete()
@@ -144,4 +143,9 @@ async def process_user_quantity_input(client, usr, item, qtyMax, usr_id):
             for error_msg in _error_messages:
                 await error_msg.delete()
                 _error_messages.remove(error_msg)
+        
+    if int(msg.content) <= item.item_max:
         return int(msg.content)
+    else:
+        error_msg = await usr.send(f"""You may only purchase a maximum of {item.item_max} {item.item_name} in a single order - please unclick and reclick the {item.item_name} emoji""")
+        _error_messages.append(error_msg)
