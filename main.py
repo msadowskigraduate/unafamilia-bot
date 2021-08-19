@@ -2,6 +2,7 @@ from user_welcome import welcome_member_to_the_guild
 from on_guild_join import intialize_order_channels
 import os
 from raidpackage import raidpackage_intro
+from item_definitions import populate_items
 import discord
 from dotenv import load_dotenv
 
@@ -14,6 +15,8 @@ TOKEN = os.getenv('TOKEN')
 
 storage = {}
 initMsgId = 0
+
+populate_items()
 
 @client.event
 async def on_ready():
