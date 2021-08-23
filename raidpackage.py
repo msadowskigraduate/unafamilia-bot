@@ -1,6 +1,9 @@
 import asyncio
+from error_handler import Error_handler
+from logging import error
 import discord
 import item_definitions
+
 
 class RaidPackageClient():
 
@@ -10,28 +13,18 @@ class RaidPackageClient():
             self.message = message
             self.author = author
             self.preorder_embed = preorder_embed
-            self.__error_messages = []
-
-
-        async def delete_order_error_messages(self):
-            if len(self.__error_messages) > 0:
-                for msg in self.__error_messages:
-                    await msg.delete()
-                    self.__error_messages.remove(msg)
             
-        async def send_error_message(self, msg: str):
-            error_msg = await self.author.send(msg)
-            self.__error_messages.append(error_msg)
             
     __init_message :discord.Message = None
 
     #Correlation between message and Order
     __responding_players = {}
 
-    def __init__(self, client: discord.Client, order_channel: discord.TextChannel, confirm_channel: discord.TextChannel):
+    def __init__(self, client: discord.Client, order_channel: discord.TextChannel, confirm_channel: discord.TextChannel, error_handler_client: Error_handler):
         self.client = client
         self.order_channel = order_channel
         self.confirm_channel = confirm_channel
+        self.error_handler_client = error_handler_client
 
     async def initialize_client(self):
         initPost = discord.Embed(title="Una Familia Raid Consumables Ordering Service", url='', color=0x109319, description='Click the 📝 reaction below to begin your order')
@@ -136,7 +129,7 @@ class RaidPackageClient():
         del self.__responding_players[order.id]
 
     async def __process_user_quantity_input(self, client, usr, item, qtyMax, usr_id, order: Order):
-        
+        msg = None
         qtyEmbed = discord.Embed(title=item, url='', color=0x109319, description=f"Enter quantity required, for example 20 (Max {qtyMax})")
         botMsg = await usr.send(embed=qtyEmbed)
 
@@ -155,18 +148,19 @@ class RaidPackageClient():
         # non-numeric string
         except TypeError:
             await botMsg.delete()
-            await order.send_error_message(f"You must enter a number - please unclick and reclick the {item} emoji")
+            await self.error_handler_client.send_usr_error_message(usr, "Error Message successful")
             
         except ValueError:
             await botMsg.delete()
-            await order.send_error_message(f"You must enter a number - please unclick and reclick the {item} emoji")
+            await self.error_handler_client.send_usr_error_message(usr, f"You must enter a number - please unclick and reclick the {item} emoji")
 
         else:
             await botMsg.delete()
                     
-        if int(msg.content) > qtyMax:
-            await order.send_error_message(f"You may only purchase a maximum of {qtyMax} {item} in a single order - please unclick and reclick the {item} emoji")
-
-        else:
-            await order.delete_order_error_messages()
-            return int(msg.content)
+        if msg is not None:
+            if int(msg.content) > qtyMax:
+                await self.error_handler_client.send_usr_error_message(usr, f"You may only purchase a maximum of {qtyMax} {item} in a single order - please unclick and reclick the {item} emoji")
+                
+            else:
+                await self.error_handler_client.delete_usr_error_messages(usr)
+                return int(msg.content)
