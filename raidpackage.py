@@ -158,7 +158,7 @@ class RaidPackageClient():
                     
         if msg is not None:
             if int(msg.content) > item.item_max:
-                await self.error_handler_client.send_usr_error_message(order.author, f"You may only purchase a maximum of {item.item_max} {item.item_name} in a single order - please unclick and reclick the {item} emoji")
+                await self.error_handler_client.send_usr_error_message(order.author, f"You may only purchase a maximum of {item.item_max} {item.item_name} in a single order - please unclick and reclick the {item.item_name} emoji")
                 
             else:
                 await self.error_handler_client.delete_usr_error_messages(order.author)

@@ -11,9 +11,15 @@ class Error_handler():
             self.__error_messages[user.id].append(error_msg)
         else:
             self.__error_messages[user.id] = [error_msg]
+        
+        print(self.__error_messages)
 
     async def delete_usr_error_messages(self, user:int):
         if user.id in self.__error_messages:
-            del self.__error_messages[user.id]
+            for message in self.__error_messages[user.id]:
+                await message.delete()
+                del self.__error_messages[user.id]
+
+            
 
 

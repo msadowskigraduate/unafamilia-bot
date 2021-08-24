@@ -22,8 +22,8 @@ error_handler_client: Error_handler = None
 async def on_ready():
     global raidpackage_client
     global error_handler_client
-    populate_items()
     guild = client.guilds[0]
+    await populate_items(guild)
     confirmed_channel, order_channel = await intialize_order_channels(guild, client, CONFIRMED_ORDER_CHANNEL_ID, ORDER_INIT_CHANNEL_ID)
 
     if error_handler_client is None:
@@ -32,7 +32,6 @@ async def on_ready():
     if raidpackage_client is None:
         raidpackage_client = RaidPackageClient(client, order_channel, confirmed_channel, error_handler_client)
 
-    
     await raidpackage_client.initialize_client()
 
 @client.event
