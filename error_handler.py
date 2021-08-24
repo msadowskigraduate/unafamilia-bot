@@ -12,11 +12,8 @@ class Error_handler():
         else:
             self.error_messages[user.id] = [error_msg]
 
-        print(self.error_messages)
-
     async def delete_usr_error_messages(self, user:int):
         if user.id in self.error_messages:
             del self.error_messages[user.id]
-            print(self.error_messages)
 
 
