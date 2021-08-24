@@ -4,7 +4,6 @@ from logging import error
 import discord
 import item_definitions
 
-
 class RaidPackageClient():
 
     class Order:
@@ -73,7 +72,7 @@ class RaidPackageClient():
             return
 
         if str(payload.emoji) == item_definitions.REACTION_CANCEL:
-            await self.__cancel_order(order.message, payload.user_id)
+            await self.__cancel_order(order)
             self.__gracefully_complete_order(order)
             return
 
@@ -103,7 +102,7 @@ class RaidPackageClient():
     async def __wait_for_order_reaction_add(self, payload, order: Order):  
         for item in item_definitions.items:
             if str(payload.emoji) == item.item_emoji:
-                qtyReq = await self.__process_user_quantity_input(self.client, order.author, item.item_name, item.item_max, payload.user_id, order)
+                qtyReq = await self.__process_user_quantity_input(self.client, item, order)
                 if qtyReq == None:
                     return
                 else:
@@ -119,19 +118,19 @@ class RaidPackageClient():
                 break
         
 
-    async def __cancel_order(self, msg, usr_id):
-        await msg.delete()
+    async def __cancel_order(self, order):
+        await order.message.delete()
         cancelMsg = discord.Embed(title="Order Cancelled", url='', color=0x109319)
-        usr = await self.client.fetch_user(usr_id)
+        usr = await self.client.fetch_user(order.author.id)
         await usr.send(embed=cancelMsg)
 
     def __gracefully_complete_order(self, order: Order):
         del self.__responding_players[order.id]
-
-    async def __process_user_quantity_input(self, client, usr, item, qtyMax, usr_id, order: Order):
+ 
+    async def __process_user_quantity_input(self, client, item, order: Order):
         msg = None
-        qtyEmbed = discord.Embed(title=item, url='', color=0x109319, description=f"Enter quantity required, for example 20 (Max {qtyMax})")
-        botMsg = await usr.send(embed=qtyEmbed)
+        qtyEmbed = discord.Embed(title=item.item_name, url='', color=0x109319, description=f"Enter quantity required, for example 20 (Max {item.item_max})")
+        botMsg = await order.author.send(embed=qtyEmbed)
 
         def checkMsg(msg):
             if msg.content != "":
@@ -143,24 +142,24 @@ class RaidPackageClient():
         except asyncio.TimeoutError:
             await botMsg.delete()
             msg = await client.wait_for("message", timeout=20.0, check=checkMsg)
-            await self.__cancel_order(msg, usr_id, client)
+            await self.__cancel_order(order)
         
         # non-numeric string
         except TypeError:
             await botMsg.delete()
-            await self.error_handler_client.send_usr_error_message(usr, "Error Message successful")
+            await self.error_handler_client.send_usr_error_message(order.author, "Error Message successful")
             
         except ValueError:
             await botMsg.delete()
-            await self.error_handler_client.send_usr_error_message(usr, f"You must enter a number - please unclick and reclick the {item} emoji")
+            await self.error_handler_client.send_usr_error_message(order.author, f"You must enter a number - please unclick and reclick the {item.item_name} emoji")
 
         else:
             await botMsg.delete()
                     
         if msg is not None:
-            if int(msg.content) > qtyMax:
-                await self.error_handler_client.send_usr_error_message(usr, f"You may only purchase a maximum of {qtyMax} {item} in a single order - please unclick and reclick the {item} emoji")
+            if int(msg.content) > item.item_max:
+                await self.error_handler_client.send_usr_error_message(order.author, f"You may only purchase a maximum of {item.item_max} {item.item_name} in a single order - please unclick and reclick the {item} emoji")
                 
             else:
-                await self.error_handler_client.delete_usr_error_messages(usr)
+                await self.error_handler_client.delete_usr_error_messages(order.author)
                 return int(msg.content)
