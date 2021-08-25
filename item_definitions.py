@@ -1,6 +1,5 @@
 import json
 from discord import message
-#import discord
 import os.path
 from os import path
 import asyncio

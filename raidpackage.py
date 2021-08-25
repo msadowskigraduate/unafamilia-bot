@@ -110,14 +110,12 @@ class RaidPackageClient():
                                             value=item.item_name + f" x{qtyReq}", inline=False))
                     break
 
-
     async def __wait_for_order_reaction_remove(self, reaction_remove_payload, order: Order):
         for item in item_definitions.items:
             if str(reaction_remove_payload.emoji) == item.item_emoji:
                 await order.message.edit(embed=order.preorder_embed.set_field_at(item.position_id, name=item.item_category, value='None', inline=False))
                 break
         
-
     async def __cancel_order(self, order):
         await order.message.delete()
         cancelMsg = discord.Embed(title="Order Cancelled", url='', color=0x109319)
