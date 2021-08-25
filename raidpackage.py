@@ -68,12 +68,12 @@ class RaidPackageClient():
             await order_posting.add_reaction('💵')
             await user.send(f"Your order is confirmed: {order_posting.jump_url}")
             await order.message.delete()
-            self.__gracefully_complete_order(order)
+            await self.__gracefully_complete_order(order)
             return
 
         if str(payload.emoji) == item_definitions.REACTION_CANCEL:
             await self.__cancel_order(order)
-            self.__gracefully_complete_order(order)
+            await self.__gracefully_complete_order(order)
             return
 
     async def __create_dm_preorder(self, usr, reaction_payload):
@@ -101,7 +101,7 @@ class RaidPackageClient():
 
     async def __wait_for_order_reaction_add(self, payload, order: Order):  
         for item in item_definitions.items:
-            if str(payload.emoji) == item.item_emoji:
+            if payload.emoji == item.item_emoji:
                 qtyReq = await self.__process_user_quantity_input(self.client, item, order)
                 if qtyReq == None:
                     return
@@ -112,7 +112,7 @@ class RaidPackageClient():
 
     async def __wait_for_order_reaction_remove(self, reaction_remove_payload, order: Order):
         for item in item_definitions.items:
-            if str(reaction_remove_payload.emoji) == item.item_emoji:
+            if reaction_remove_payload.emoji.id == item.item_emoji.id:
                 await order.message.edit(embed=order.preorder_embed.set_field_at(item.position_id, name=item.item_category, value='None', inline=False))
                 break
         
@@ -122,8 +122,9 @@ class RaidPackageClient():
         usr = await self.client.fetch_user(order.author.id)
         await usr.send(embed=cancelMsg)
 
-    def __gracefully_complete_order(self, order: Order):
+    async def __gracefully_complete_order(self, order: Order):
         del self.__responding_players[order.id]
+        await self.error_handler_client.delete_usr_error_messages(order.author)
  
     async def __process_user_quantity_input(self, client, item, order: Order):
         msg = None

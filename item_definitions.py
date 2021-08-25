@@ -5,6 +5,7 @@ from os import path
 import asyncio
 
 items = []
+__emoji_directory_path = "resources/custom_emojis/"
 
 REACTION_ACCEPT='✅'
 REACTION_CANCEL='❌'
@@ -31,16 +32,16 @@ async def populate_items(guild):
         for emoji in guild.emojis:
             __existing_emoji_names.append(emoji.name)
             if str(emoji.name) == item.slug:
-                item.item_emoji = f'<:{str(emoji.name)}:{str(emoji.id)}>'
+                item.item_emoji = emoji
                 break
             
         if item.slug not in __existing_emoji_names:
-            if os.path.isfile(f"resources/custom_emojis/{item.slug}.png"):
-                with open(f"resources/custom_emojis/{item.slug}.png", "rb") as image:
+            if os.path.isfile(f"{__emoji_directory_path}{item.slug}.png"):
+                with open(f"{__emoji_directory_path}{item.slug}.png", "rb") as image:
                     img = image.read()
                     b = bytearray(img)
                     new_emoji = await guild.create_custom_emoji(name=item.slug, image=b)
-                    item.item_emoji = f'<:{str(new_emoji.name)}:{str(new_emoji.id)}>'
+                    item.item_emoji = new_emoji
             else:
                 raise Exception(f"No image file found for {item.item_name} emoji. Please add a .png, .jpg or GIF file named {item.slug} to resources/custom_emojis folder")
 
