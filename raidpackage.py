@@ -1,4 +1,6 @@
 import asyncio
+from error_handler import Error_handler
+from logging import error
 import discord
 import item_definitions
 
@@ -10,16 +12,18 @@ class RaidPackageClient():
             self.message = message
             self.author = author
             self.preorder_embed = preorder_embed
-
+            
+            
     __init_message :discord.Message = None
 
     #Correlation between message and Order
     __responding_players = {}
 
-    def __init__(self, client: discord.Client, order_channel: discord.TextChannel, confirm_channel: discord.TextChannel):
+    def __init__(self, client: discord.Client, order_channel: discord.TextChannel, confirm_channel: discord.TextChannel, error_handler_client: Error_handler):
         self.client = client
         self.order_channel = order_channel
         self.confirm_channel = confirm_channel
+        self.error_handler_client = error_handler_client
 
     async def initialize_client(self):
         initPost = discord.Embed(title="Una Familia Raid Consumables Ordering Service", url='', color=0x109319, description='Click the 📝 reaction below to begin your order')
@@ -68,7 +72,7 @@ class RaidPackageClient():
             return
 
         if str(payload.emoji) == item_definitions.REACTION_CANCEL:
-            await self.__cancel_order(order.message, payload.user_id)
+            await self.__cancel_order(order)
             self.__gracefully_complete_order(order)
             return
 
@@ -98,7 +102,7 @@ class RaidPackageClient():
     async def __wait_for_order_reaction_add(self, payload, order: Order):  
         for item in item_definitions.items:
             if str(payload.emoji) == item.item_emoji:
-                qtyReq = await self.__process_user_quantity_input(self.client, order.author, item.item_name, item.item_max, payload.user_id)
+                qtyReq = await self.__process_user_quantity_input(self.client, item, order)
                 if qtyReq == None:
                     return
                 else:
@@ -114,20 +118,19 @@ class RaidPackageClient():
                 break
         
 
-    async def __cancel_order(self, msg, usr_id):
-        await msg.delete()
+    async def __cancel_order(self, order):
+        await order.message.delete()
         cancelMsg = discord.Embed(title="Order Cancelled", url='', color=0x109319)
-        usr = await self.client.fetch_user(usr_id)
+        usr = await self.client.fetch_user(order.author.id)
         await usr.send(embed=cancelMsg)
 
     def __gracefully_complete_order(self, order: Order):
         del self.__responding_players[order.id]
-
-    async def __process_user_quantity_input(self, client, usr, item, qtyMax, usr_id):
-        __error_messages = []
-        qtyEmbed = discord.Embed(title=item, url='', color=0x109319, description=f"Enter quantity required, for example 20 (Max {qtyMax})")
-        qtyEmbed.set_footer(text="If the bot doesn't respond, un-click and re-click the reaction")
-        botMsg = await usr.send(embed=qtyEmbed)
+ 
+    async def __process_user_quantity_input(self, client, item, order: Order):
+        msg = None
+        qtyEmbed = discord.Embed(title=item.item_name, url='', color=0x109319, description=f"Enter quantity required, for example 20 (Max {item.item_max})")
+        botMsg = await order.author.send(embed=qtyEmbed)
 
         def checkMsg(msg):
             if msg.content != "":
@@ -139,27 +142,24 @@ class RaidPackageClient():
         except asyncio.TimeoutError:
             await botMsg.delete()
             msg = await client.wait_for("message", timeout=20.0, check=checkMsg)
-            await self.__cancel_order(msg, usr_id, client)
+            await self.__cancel_order(order)
         
         # non-numeric string
         except TypeError:
-            error_msg = await usr.send(f"You must enter a number - please unclick and reclick the {item} emoji")
-            __error_messages.append(error_msg)
+            await botMsg.delete()
+            await self.error_handler_client.send_usr_error_message(order.author, "Error Message successful")
+            
         except ValueError:
             await botMsg.delete()
-            error_msg = await usr.send(f"You must enter a number - please unclick and reclick the {item} emoji")
-            __error_messages.append(error_msg)
+            await self.error_handler_client.send_usr_error_message(order.author, f"You must enter a number - please unclick and reclick the {item.item_name} emoji")
+
         else:
             await botMsg.delete()
                     
-        if int(msg.content) <= qtyMax:
-            return int(msg.content)
-        else:
-            error_msg = await usr.send(f"""You may only purchase a maximum of {qtyMax} {item} in a single order - please unclick and reclick the {item} emoji""")
-            __error_messages.append(error_msg)
-
-            if len(__error_messages) > 0:
-                for error_msg in __error_messages:
-                    await error_msg.delete()
-                    __error_messages.remove(error_msg)
-            return int(msg.content)
+        if msg is not None:
+            if int(msg.content) > item.item_max:
+                await self.error_handler_client.send_usr_error_message(order.author, f"You may only purchase a maximum of {item.item_max} {item.item_name} in a single order - please unclick and reclick the {item} emoji")
+                
+            else:
+                await self.error_handler_client.delete_usr_error_messages(order.author)
+                return int(msg.content)
