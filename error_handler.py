@@ -1,5 +1,4 @@
-import discord
-import asyncio
+
 
 class Error_handler():
     def __init__(self):

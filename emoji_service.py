@@ -47,7 +47,6 @@ class Emoji_service():
         
     # Takes an image and slug and returns an emoji 
     async def __create_emoji_from_file(self, img, slug):
-        b = []
         b = bytearray(img)
         new_emoji = await self.guild.create_custom_emoji(name=slug, image=b)
         self.__existing_emoji_names[new_emoji.name] = new_emoji

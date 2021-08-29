@@ -96,7 +96,6 @@ class RaidPackageClient():
         sent_message = await usr.send(embed=preorder_embed)
 
         for item in self.item_handler_client.items:
-            print(item.item_emoji)
             await sent_message.add_reaction(item.item_emoji)
 
         await sent_message.add_reaction(self.emoji_service_client.REACTION_ACCEPT)
