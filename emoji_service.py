@@ -16,7 +16,6 @@ class Emoji_service():
         for emoji in self.guild.emojis: 
             self.__existing_emoji_names[emoji.name] = emoji
 
-    
     # Takes a slug representing the expected name part of the required emoji
     # If already in the server, returns the emoji object, else creates the emoji if there is
     # an image file matching the slug and returns it
@@ -24,10 +23,8 @@ class Emoji_service():
         if slug in self.__existing_emoji_names.keys():
             return self.__existing_emoji_names[slug]
         else:
-            print("Requesting new emoji")
             return await self.__create_new_emoji(slug)
   
-       
     # Searches the path folder for image file matching the slug, then uses this to create
     # a custom emoji and return it. Private method to ensure bot always has to check if emoji exists
     # before creating a new emoji due to custom emoji limits on servers
@@ -46,14 +43,12 @@ class Emoji_service():
         else:
             raise Exception(f"No image file found for {slug} emoji. Please add a .png, .jpg or GIF file named {slug} to resources/custom_emojis folder")
         
-        print("Passing image file to __create_emoji_from_file")
         return await self.__create_emoji_from_file(img, slug)
         
     # Takes an image and slug and returns an emoji 
     async def __create_emoji_from_file(self, img, slug):
         b = []
         b = bytearray(img)
-        print("Creating new emoji")
         new_emoji = await self.guild.create_custom_emoji(name=slug, image=b)
         self.__existing_emoji_names[new_emoji.name] = new_emoji
         return new_emoji  

@@ -43,7 +43,6 @@ async def on_ready():
     if raidpackage_client is None:
         raidpackage_client = RaidPackageClient(client, order_channel, confirmed_channel, error_handler_client, emoji_service_client, item_handler_client)
 
-    
     await raidpackage_client.initialize_client()
 
 @client.event
